@@ -107,7 +107,7 @@ def main():
 
     # Step 6: Combine overlay with the base map
     combined = Image.alpha_composite(base_map, overlay)
-
+    print("Radar image created.")
     # Step 7: Display on ePD
     epd = epd7in3e.EPD()
     epd.init()
@@ -116,3 +116,11 @@ def main():
     buf = epd.getbuffer(image)
     epd.display(buf)
     epd.sleep()
+    # Send to display
+    try:
+        display_image_on_epd(combined)
+        print("Weather display updated.")
+    except Exception as e:
+        print(f"Error: {e}")
+if __name__ == "__main__":
+    main()
