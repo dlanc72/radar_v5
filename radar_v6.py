@@ -1,6 +1,6 @@
 import requests
 from PIL import Image, ImageDraw
-from waveshare_epd import epd7in3
+from waveshare_epd import epd7in3e
 import time
 
 # Coordinates for the map
@@ -89,9 +89,30 @@ def create_alert_overlay(overlays, map_bounds, size):
 
 
 def main():
-    # Fetch static map from OpenStreetMap
-    base_map = get_static_map(LAT, LON, ZOOM)
-    map_size = base_map.size
+    # Step 1: Fetch static map background
+    base_map = get_static_map(LAT, LON, ZOOM).convert('RGBA')
+    size = base_map.size
 
-    # Fetch weather alerts from weather.gov
+    # Step 2: Fetch weather alerts
+    alerts_json = fetch_weather_alerts()
 
+    # Step 3: Parse alert geometries and severity
+    overlays_info = parse_alerts_and_severity(alerts_json)
+
+    # Step 4: Get map bounds for coordinate conversion
+    bounds = get_map_bounds()
+
+    # Step 5: Create overlay image from alert geometries
+    overlay = create_alert_overlay(overlays_info, bounds, size)
+
+    # Step 6: Combine overlay with the base map
+    combined = Image.alpha_composite(base_map, overlay)
+
+    # Step 7: Display on ePD
+    epd = epd7in3e.EPD()
+    epd.init()
+    epd.Clear()
+    # Convert PIL image to buffer compatible with the display
+    buf = epd.getbuffer(image)
+    epd.display(buf)
+    epd.sleep()
