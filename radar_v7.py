@@ -1,5 +1,5 @@
 import requests
-from PIL import Image
+from PIL import Image, ImageDraw
 from waveshare_epd import epd7in3e
 from io import BytesIO
 
@@ -52,6 +52,13 @@ def reduce_opacity(image, alpha_factor):
     image.putalpha(alpha)
     return image
 
+def latlon_to_pixel(lat, lon, bounds, image_size):
+    min_lat, min_lon, max_lat, max_lon = bounds
+    width, height = image_size
+    x = (lon - min_lon) / (max_lon - min_lon) * width
+    y = (max_lat - lat) / (max_lat - min_lat) * height
+    return int(x), int(y)
+
 def prepare_for_epd(image):
     palette = [
         (255, 255, 255), (0, 0, 0), (255, 0, 0),
@@ -82,17 +89,12 @@ def main():
         print("Compositing...")
         combined = Image.alpha_composite(base, radar)
 
-        print("Adding location symbol")
+        print("Adding location marker")
+        # Draw red dot for your lat/lon
         draw = ImageDraw.Draw(combined)
-        # Define circle center and radius
-        center_x = combined.width // 2
-        center_y = combined.height // 2
-        radius = 6  # pixels
-        # Draw filled red circle
-        draw.ellipse(
-            [(center_x - radius, center_y - radius), (center_x + radius, center_y + radius)],
-            fill=(255, 0, 0)
-        )
+        x, y = latlon_to_pixel(LAT, LON, bounds, combined.size)
+        radius = 6
+        draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=(255, 0, 0))
 
         print("Preparing for EPD...")
         epd_ready = prepare_for_epd(combined)
