@@ -4,9 +4,9 @@ from waveshare_epd import epd7in3e
 from io import BytesIO
 
 # Config
-LAT = 29.68
-LON = -95.17
-ZOOM = 6
+LAT = 29.6165
+LON = -95.1696
+ZOOM = 6.5
 WIDTH, HEIGHT = 800, 480
 GEOAPIFY_KEY = "YOUR_GEOAPIFY_API_KEY"  # Replace this
 
@@ -77,10 +77,22 @@ def main():
         radar = get_noaa_radar(bounds)
 
         print("Reducing radar opacity...")
-        radar = reduce_opacity(radar, 0.7)  # 50% transparency
+        radar = reduce_opacity(radar, 0.8)  # 80% transparency
 
         print("Compositing...")
         combined = Image.alpha_composite(base, radar)
+
+        print("Adding location symbol")
+        draw = ImageDraw.Draw(combined)
+        # Define circle center and radius
+        center_x = combined.width // 2
+        center_y = combined.height // 2
+        radius = 6  # pixels
+        # Draw filled red circle
+        draw.ellipse(
+            [(center_x - radius, center_y - radius), (center_x + radius, center_y + radius)],
+            fill=(255, 0, 0)
+        )
 
         print("Preparing for EPD...")
         epd_ready = prepare_for_epd(combined)
