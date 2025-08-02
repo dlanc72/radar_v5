@@ -2,5 +2,5 @@ Weather Radar displayed on a Waveshare epd7in3e using a Raspberry Pi Zero WH. Pu
 
 I have this running every 10 minutes via cron.
 
-Waveshare fresh install insctructions:
+Waveshare fresh install instructions:
 https://www.waveshare.com/wiki/7.3inch_e-Paper_HAT_(E)_Manual#Working_With_Raspberry_Pi
