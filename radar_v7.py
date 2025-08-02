@@ -17,7 +17,7 @@ def get_map_bounds():
 def get_static_map(lat, lon, zoom):
     url = (
         f"https://maps.geoapify.com/v1/staticmap"
-        f"?style=osm-bright-smooth&width={WIDTH}&height={HEIGHT}"
+        f"?style=toner-grey&width={WIDTH}&height={HEIGHT}"
         f"&center=lonlat:{lon},{lat}&zoom={zoom}&apiKey={GEOAPIFY_KEY}"
     )
     r = requests.get(url, stream=True, timeout=10)
@@ -43,6 +43,15 @@ def get_noaa_radar(bounds):
     r.raise_for_status()
     return Image.open(BytesIO(r.content)).convert("RGBA")
 
+def reduce_opacity(image, alpha_factor):
+    """Lower the opacity of an RGBA image."""
+    if image.mode != 'RGBA':
+        image = image.convert('RGBA')
+    alpha = image.split()[3]
+    alpha = alpha.point(lambda p: int(p * alpha_factor))
+    image.putalpha(alpha)
+    return image
+
 def prepare_for_epd(image):
     palette = [
         (255, 255, 255), (0, 0, 0), (255, 0, 0),
@@ -66,6 +75,9 @@ def main():
 
         print("Downloading NOAA radar...")
         radar = get_noaa_radar(bounds)
+
+        print("Reducing radar opacity...")
+        radar = reduce_opacity(radar, 0.7)  # 50% transparency
 
         print("Compositing...")
         combined = Image.alpha_composite(base, radar)
