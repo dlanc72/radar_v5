@@ -9,14 +9,15 @@ LON = -95.17  # Your longitude
 ZOOM = 6  # Map zoom level
 
 
-# OpenStreetMap static map provider URL (replace with your preferred static map API)
+# Geoapify static map provider URL (replace with your preferred static map API)
 def get_static_map(lat, lon, zoom):
     # Using Static Map Lite (free with limitations)
-    url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:-95.17,29.68&zoom=6&apiKey="
+    url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:{LON},{LAT}&zoom={ZOOM}&apiKey="
     response = requests.get(url, stream=True)
     response.raise_for_status()
     try:
         return Image.open(response.raw)
+        print(f"Map image generated.")
     except Exception as e:
         print(f"Failed to open map image: {e}")
         return Image.new('RGBA', (800, 480), (255, 255, 255, 255))  # fallback blank image
@@ -55,23 +56,30 @@ def parse_alerts_and_severity(alerts_json):
     return severity_overlays
 
 
-def latlon_to_xy(coords, map_bounds, size):
-    """Transform geo-coordinates into pixel positions based on map bounds."""
+def latlon_to_xy(coord, map_bounds, size):
+    """
+    Transform geo-coordinates (lon, lat) into pixel positions on the map.
+    GeoJSON uses [lon, lat] order.
+    """
     min_lat, min_lon, max_lat, max_lon = map_bounds
     width, height = size
-    x = (coords[1] - min_lon) / (max_lon - min_lon) * width
-    y = (max_lat - coords[0]) / (max_lat - min_lat) * height
+    lon, lat = coord
+    x = (lon - min_lon) / (max_lon - min_lon) * width
+    y = (max_lat - lat) / (max_lat - min_lat) * height
     return (x, y)
 
 
 def get_map_bounds():
-    """Estimate map bounds based on center and zoom level."""
-    delta_deg = 0.05 * (15 - ZOOM)  # Approximate degree span based on zoom
-    min_lat = LAT - delta_deg
-    max_lat = LAT + delta_deg
-    min_lon = LON - delta_deg
-    max_lon = LON + delta_deg
-    return (min_lat, min_lon, max_lat, max_lon)
+    """
+    Estimate wide enough map bounds to include local weather alerts.
+    Using ±5 degrees from the center to ensure visibility of large alert areas.
+    """
+    delta_lat = 5.0
+    delta_lon = 5.0
+    return (
+        LAT - delta_lat, LON - delta_lon,
+        LAT + delta_lat, LON + delta_lon
+    )
 
 
 def create_alert_overlay(overlays, map_bounds, size):
