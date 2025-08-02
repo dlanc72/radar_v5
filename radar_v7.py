@@ -84,17 +84,20 @@ def main():
         radar = get_noaa_radar(bounds)
 
         print("Reducing radar opacity...")
-        radar = reduce_opacity(radar, 0.8)  # 80% transparency
+        radar = reduce_opacity(radar, 0.7)  # 70% transparency
 
         print("Compositing...")
         combined = Image.alpha_composite(base, radar)
 
-        print("Adding location marker")
-        # Draw red dot for your lat/lon
+        print("Adding location marker...")
+        # Draw crosshair at your lat/lon position
         draw = ImageDraw.Draw(combined)
         x, y = latlon_to_pixel(LAT, LON, bounds, combined.size)
-        radius = 6
-        draw.ellipse([(x - radius, y - radius), (x + radius, y + radius)], fill=(255, 0, 0))
+        size = 10  # half-length of the crosshair lines
+        # Horizontal line
+        draw.line([(x - size, y), (x + size, y)], fill=(255, 0, 0), width=2)
+        # Vertical line
+        draw.line([(x, y - size), (x, y + size)], fill=(255, 0, 0), width=2)
 
         print("Preparing for EPD...")
         epd_ready = prepare_for_epd(combined)
