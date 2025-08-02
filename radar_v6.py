@@ -6,13 +6,13 @@ import time
 # Coordinates for the map
 LAT = 29.68  # Your latitude
 LON = -95.17  # Your longitude
-ZOOM = 10  # Map zoom level
+ZOOM = 6  # Map zoom level
 
 
 # OpenStreetMap static map provider URL (replace with your preferred static map API)
 def get_static_map(lat, lon, zoom):
     # Using Static Map Lite (free with limitations)
-    url = f"https://staticmap.openstreetmap.de/staticmap.php?center={lat},{lon}&zoom={zoom}&size=800x480&markers={lat},{lon},red"
+    url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:-95.17,29.68&zoom=6&apiKey=efbdfc0a285c47109555a70fd4836e4b"
     response = requests.get(url, stream=True)
     response.raise_for_status()
     return Image.open(response.raw)
