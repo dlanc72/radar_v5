@@ -15,7 +15,11 @@ def get_static_map(lat, lon, zoom):
     url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:-95.17,29.68&zoom=6&apiKey="
     response = requests.get(url, stream=True)
     response.raise_for_status()
-    return Image.open(response.raw)
+    try:
+        return Image.open(response.raw)
+    except Exception as e:
+        print(f"Failed to open map image: {e}")
+        return Image.new('RGBA', (800, 480), (255, 255, 255, 255))  # fallback blank image
 
 
 def fetch_weather_alerts():
@@ -106,19 +110,17 @@ def main():
     overlay = create_alert_overlay(overlays_info, bounds, size)
 
     # Step 6: Combine overlay with the base map
-    combined = Image.alpha_composite(base_map, overlay)
-    print("Radar image created.")
-    # Step 7: Display on ePD
-    epd = epd7in3e.EPD()
-    epd.init()
-    epd.Clear()
-    # Convert PIL image to buffer compatible with the display
-    buf = epd.getbuffer(image)
-    epd.display(buf)
-    epd.sleep()
-    # Send to display
     try:
-        display_image_on_epd(combined)
+        combined = Image.alpha_composite(base_map, overlay)
+        print("Radar image created.")
+        # Step 7: Display on ePD
+        epd = epd7in3e.EPD()
+        epd.init()
+        epd.Clear()
+        # Convert PIL image to buffer compatible with the display
+        buf = epd.getbuffer(combined)
+        epd.display(buf)
+        epd.sleep()
         print("Weather display updated.")
     except Exception as e:
         print(f"Error: {e}")
