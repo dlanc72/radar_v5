@@ -12,7 +12,7 @@ ZOOM = 6  # Map zoom level
 # OpenStreetMap static map provider URL (replace with your preferred static map API)
 def get_static_map(lat, lon, zoom):
     # Using Static Map Lite (free with limitations)
-    url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:-95.17,29.68&zoom=6&apiKey=efbdfc0a285c47109555a70fd4836e4b"
+    url = f"https://maps.geoapify.com/v1/staticmap?style=osm-bright-smooth&width=800&height=480&center=lonlat:-95.17,29.68&zoom=6&apiKey="
     response = requests.get(url, stream=True)
     response.raise_for_status()
     return Image.open(response.raw)
