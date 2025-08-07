@@ -102,9 +102,14 @@ def main():
 
         print("Adding timestamp...")
         timestamp = datetime.now().strftime("Last updated: %Y-%m-%d %H:%M")
-        font = ImageFont.load_default()
-        text_width, text_height = draw.textsize(timestamp, font=font)
-        draw.text((5, combined.height - text_height - 5), timestamp, font=font, fill=(0, 0, 0))
+        font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 14)
+        bbox = draw.textbbox((0, 0), timestamp, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        padding = 5
+        x = padding
+        y = combined.height - text_height - padding
+        draw.text((x, y), timestamp, font=font, fill=(255, 0, 0))  # red text
 
         print("Preparing for EPD...")
         epd_ready = prepare_for_epd(combined)
