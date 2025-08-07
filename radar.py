@@ -87,29 +87,38 @@ def main():
         print("Reducing radar opacity...")
         radar = reduce_opacity(radar, 0.7)  # 70% transparency
 
-        print("Compositing...")
-        combined = Image.alpha_composite(base, radar)
+        # Composite in the right order to lose less detail
+        base = get_static_map(LAT, LON, ZOOM)
+        radar = reduce_opacity(get_noaa_radar(bounds), 0.3)
 
-        print("Adding location marker...")
-        # Draw crosshair at your lat/lon position
-        draw = ImageDraw.Draw(combined)
-        x, y = latlon_to_pixel(LAT, LON, bounds, combined.size)
-        size = 10  # half-length of the crosshair lines
-        # Horizontal line
-        draw.line([(x - size, y), (x + size, y)], fill=(255, 0, 0), width=2)
-        # Vertical line
-        draw.line([(x, y - size), (x, y + size)], fill=(255, 0, 0), width=2)
+        # Create a transparent overlay image for annotations
+        overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
+        draw = ImageDraw.Draw(overlay)
 
-        print("Adding timestamp...")
+        # Crosshair
+        x, y = latlon_to_pixel(LAT, LON, bounds, base.size)
+        size = 10
+        draw.line([(x - size, y), (x + size, y)], fill=(255, 0, 0, 255), width=2)
+        draw.line([(x, y - size), (x, y + size)], fill=(255, 0, 0, 255), width=2)
+
+        # Timestamp
         timestamp = datetime.now().strftime("Last updated: %Y-%m-%d %H:%M")
         font = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 14)
         bbox = draw.textbbox((0, 0), timestamp, font=font)
         text_width = bbox[2] - bbox[0]
         text_height = bbox[3] - bbox[1]
         padding = 5
-        x = padding
-        y = combined.height - text_height - padding
-        draw.text((x, y), timestamp, font=font, fill=(255, 0, 0))  # red text
+        tx = padding
+        ty = overlay.height - text_height - padding
+        draw.rectangle(
+            [tx - 2, ty - 2, tx + text_width + 2, ty + text_height + 2],
+            fill=(255, 255, 255, 200)
+        )
+        draw.text((tx, ty), timestamp, font=font, fill=(255, 0, 0, 255))
+
+        # Composite base + radar + overlay
+        combined = Image.alpha_composite(base, radar)
+        combined = Image.alpha_composite(combined, overlay)
 
         print("Preparing for EPD...")
         epd_ready = prepare_for_epd(combined)
