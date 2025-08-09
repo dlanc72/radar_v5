@@ -1,4 +1,4 @@
-Weather Radar displayed on a Waveshare epd7in3e eink display using a Raspberry Pi Zero WH. Pulls the map from Geoapify (with free API key) and weather radar from NOAA. Allows for adjustable lat/long/zoom, and weather is displayed in color depending on severity. Currently set to sleep the display between refreshes, but you can remove that if the refresh time is bothersome (about 15 secs).
+Weather Radar displayed on a Waveshare epd7in3e eink display using a Raspberry Pi Zero WH. Pulls the map from Geoapify (with free API key) and weather radar from NOAA. Allows for adjustable lat/long/zoom, and weather is displayed in color depending on severity. 
 
 I have this running every 10 minutes via cron.
 
