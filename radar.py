@@ -5,8 +5,8 @@ from io import BytesIO
 from datetime import datetime
 
 # Config
-LAT = 29.6165
-LON = -95.1696
+LAT = XX.XXXX
+LON = -YY.YYYY
 ZOOM = 6.5
 WIDTH, HEIGHT = 800, 480
 GEOAPIFY_KEY = "YOUR_GEOAPIFY_API_KEY"  # Replace this
@@ -89,7 +89,7 @@ def main():
 
         # Composite in the right order to lose less detail
         base = get_static_map(LAT, LON, ZOOM)
-        radar = reduce_opacity(get_noaa_radar(bounds), 0.3)
+        radar = reduce_opacity(get_noaa_radar(bounds), 0.7)
 
         # Create a transparent overlay image for annotations
         overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
