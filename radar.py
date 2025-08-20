@@ -12,7 +12,12 @@ ZOOM = 6.5
 WIDTH, HEIGHT = 800, 480
 GEOAPIFY_KEY = "YOUR_GEOAPIFY_API_KEY"  # Replace this
 
-# --- derive map bounds from zoom ---
+# --- Radar adjustment (tweak these) ---
+RADAR_SCALE = 1.05     # >1 zoom in, <1 zoom out
+RADAR_OFFSET_X = 0    # positive = shift right, negative = left
+RADAR_OFFSET_Y = -0    # positive = shift down, negative = up
+# --------------------------------------
+
 def get_map_bounds_from_zoom(lat, lon, zoom, width, height):
     # Web Mercator projection
     def lon_to_x(lon): return (lon + 180) / 360 * 256 * 2**zoom
@@ -67,6 +72,20 @@ def get_noaa_radar(bounds):
     r.raise_for_status()
     return Image.open(BytesIO(r.content)).convert("RGBA")
 
+def adjust_radar(radar):
+    """Scale and offset radar overlay for better alignment."""
+    # Scale
+    new_size = (int(WIDTH * RADAR_SCALE), int(HEIGHT * RADAR_SCALE))
+    radar = radar.resize(new_size, Image.BICUBIC)
+
+    # Center back onto a blank canvas
+    offset_x = (WIDTH - radar.width) // 2 + RADAR_OFFSET_X
+    offset_y = (HEIGHT - radar.height) // 2 + RADAR_OFFSET_Y
+
+    canvas = Image.new("RGBA", (WIDTH, HEIGHT), (0, 0, 0, 0))
+    canvas.paste(radar, (offset_x, offset_y), radar)
+    return canvas
+
 def reduce_opacity(image, alpha_factor):
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
@@ -99,13 +118,16 @@ def prepare_for_epd(image):
 def main():
     try:
         print("Getting map bounds...")
-        bounds = get_map_bounds_from_zoom(LAT, LON, ZOOM, WIDTH, HEIGHT)  # <-- changed
+        bounds = get_map_bounds_from_zoom(LAT, LON, ZOOM, WIDTH, HEIGHT)
 
         print("Downloading base map...")
         base = get_static_map(LAT, LON, ZOOM)
 
         print("Downloading NOAA radar...")
         radar = get_noaa_radar(bounds)
+
+        print("Adjusting radar position/scale...")
+        radar = adjust_radar(radar)  # <-- new step
 
         print("Reducing radar opacity...")
         radar = reduce_opacity(radar, 0.7)
