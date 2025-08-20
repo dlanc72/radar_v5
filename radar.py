@@ -3,6 +3,7 @@ from PIL import Image, ImageDraw, ImageFont
 from waveshare_epd import epd7in3e
 from io import BytesIO
 from datetime import datetime
+import math
 
 # Config
 LAT = XX.XXXX
@@ -11,9 +12,31 @@ ZOOM = 6.5
 WIDTH, HEIGHT = 800, 480
 GEOAPIFY_KEY = "YOUR_GEOAPIFY_API_KEY"  # Replace this
 
-def get_map_bounds():
-    delta = 5.0
-    return (LAT - delta, LON - delta, LAT + delta, LON + delta)
+# --- derive map bounds from zoom ---
+def get_map_bounds_from_zoom(lat, lon, zoom, width, height):
+    # Web Mercator projection
+    def lon_to_x(lon): return (lon + 180) / 360 * 256 * 2**zoom
+    def lat_to_y(lat):
+        rad = math.radians(lat)
+        return (1 - math.log(math.tan(rad) + 1 / math.cos(rad)) / math.pi) / 2 * 256 * 2**zoom
+
+    center_x = lon_to_x(lon)
+    center_y = lat_to_y(lat)
+
+    half_w = width / 2
+    half_h = height / 2
+
+    def x_to_lon(x): return x / (256 * 2**zoom) * 360 - 180
+    def y_to_lat(y):
+        n = math.pi - 2 * math.pi * y / (256 * 2**zoom)
+        return math.degrees(math.atan(math.sinh(n)))
+
+    min_lon = x_to_lon(center_x - half_w)
+    max_lon = x_to_lon(center_x + half_w)
+    max_lat = y_to_lat(center_y - half_h)
+    min_lat = y_to_lat(center_y + half_h)
+
+    return min_lat, min_lon, max_lat, max_lon
 
 def get_static_map(lat, lon, zoom):
     url = (
@@ -45,7 +68,6 @@ def get_noaa_radar(bounds):
     return Image.open(BytesIO(r.content)).convert("RGBA")
 
 def reduce_opacity(image, alpha_factor):
-    """Lower the opacity of an RGBA image."""
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
     alpha = image.split()[3]
@@ -77,7 +99,8 @@ def prepare_for_epd(image):
 def main():
     try:
         print("Getting map bounds...")
-        bounds = get_map_bounds()
+        bounds = get_map_bounds_from_zoom(LAT, LON, ZOOM, WIDTH, HEIGHT)  # <-- changed
+
         print("Downloading base map...")
         base = get_static_map(LAT, LON, ZOOM)
 
@@ -85,13 +108,9 @@ def main():
         radar = get_noaa_radar(bounds)
 
         print("Reducing radar opacity...")
-        radar = reduce_opacity(radar, 0.7)  # 70% transparency
+        radar = reduce_opacity(radar, 0.7)
 
-        # Composite in the right order to lose less detail
-        base = get_static_map(LAT, LON, ZOOM)
-        radar = reduce_opacity(get_noaa_radar(bounds), 0.7)
-
-        # Create a transparent overlay image for annotations
+        # Create overlay for crosshair + timestamp
         overlay = Image.new("RGBA", base.size, (0, 0, 0, 0))
         draw = ImageDraw.Draw(overlay)
 
