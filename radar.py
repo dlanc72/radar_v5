@@ -13,7 +13,7 @@ WIDTH, HEIGHT = 800, 480
 GEOAPIFY_KEY = "YOUR_GEOAPIFY_API_KEY"  # Replace this
 
 # --- Radar adjustment (tweak these) ---
-RADAR_SCALE = 1.05     # >1 zoom in, <1 zoom out
+RADAR_SCALE = 1.8     # >1 zoom in, <1 zoom out
 RADAR_OFFSET_X = 0    # positive = shift right, negative = left
 RADAR_OFFSET_Y = -0    # positive = shift down, negative = up
 # --------------------------------------
